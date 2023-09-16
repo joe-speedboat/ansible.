@@ -1,0 +1,20 @@
+---
+galaxy_info:
+  author: Chris Ruettimann
+  company: Bitbull Community
+  role_name: fact_inventory
+  namespace: joe-speedboat
+  description: Create JSON Ressource file of various vSphere endpoints
+  min_ansible_version: 2.11
+  license: GPLv3
+  platforms:
+  - name: EL
+    versions:
+    - 9
+  galaxy_tags:
+    - vsphere
+    - vmware
+
+# We don't use dependencies in here anymore
+dependencies: []
+...

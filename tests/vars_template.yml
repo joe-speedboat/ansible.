@@ -1,0 +1,18 @@
+---
+inventory_file: /tmp/fact_inventory.json
+debug_vars: True
+inventory_targets:
+  - ressource_name: "vcenter1"
+    type: "vsphere"
+    validate_certs: True
+    vcenter_api_url: "vcenter.example.com"
+    vcenter_username: "myadm@mydomain.com"
+    vcenter_password: "mysecret_do_not_share"
+    datacenter_regex: '.*'
+    cluster_regex: '.*'
+    host_regex: '.*'
+    datastore_regex: '.*'
+    network_regex: '.*'
+    vm_folder_regex: '.*'
+    vm_regex: '.*'
+...
