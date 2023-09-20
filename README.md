@@ -97,7 +97,7 @@ systemctl status lighttpd
 
 lsof -i -P -n | grep light
 
-test -f /usr/bin/python && ln -s /usr/bin/python3 /usr/bin/python
+test -f /usr/bin/python || ln -s /usr/bin/python3 /usr/bin/python
 
 mkdir -p /var/www/lighttpd/cgi-bin
 
