@@ -1,8 +1,8 @@
 ---
 # defaults file for joe-speedboat.fact_inventory
 
-inventory_file: /tmp/fact_inventory.json
-debug_vars: True
+inventory_file: /var/www/lighttpd/cgi-bin/fact.json
+debug_vars: False
 inventory_targets:
   - ressource_name: "vcenter1"
     type: "vsphere"
@@ -16,5 +16,4 @@ inventory_targets:
     datastore_regex: '.*'
     network_regex: '.*'
     vm_folder_regex: '.*'
-    vm_regex: '.*'
 

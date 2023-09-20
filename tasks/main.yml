@@ -2,14 +2,15 @@
 # tasks file for joe-speedboat.fact_inventory
 #
 - name: Include vsphere tasks for each target
-  include_tasks: vsphere.yml
+  include_tasks: vsphere_10_main.yml
   loop: "{{ inventory_targets }}"
   loop_control:
     loop_var: target
   when: target.type == 'vsphere'
+  no_log: True
 
-- name: Write ressource_inventory to JSON file
+- name: Write fact_inventory to JSON file
   copy:
-    content: "{{ ressource_inventory | to_nice_json }}"
+    content: "{{ fact_inventory | to_nice_json }}"
     dest: "{{ inventory_file }}"
 

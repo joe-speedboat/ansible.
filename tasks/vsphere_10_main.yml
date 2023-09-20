@@ -1,0 +1,35 @@
+- name: Authenticate with vCenter API
+  uri:
+    url: "https://{{ target.vcenter_api_url }}/rest/com/vmware/cis/session"
+    method: POST
+    user: "{{ target.vcenter_username }}"
+    password: "{{ target.vcenter_password }}"
+    force_basic_auth: yes
+    validate_certs: "{{ target.validate_certs }}"
+  register: login
+  no_log: True
+
+- name: Get Data Centers by API
+  uri:
+    url: "https://{{ target.vcenter_api_url }}/rest/vcenter/datacenter"
+    method: GET
+    headers:
+      vmware-api-session-id: "{{ login.json.value }}"
+    validate_certs: "{{ target.validate_certs }}"
+  register: data_centers
+
+- name: Debug - data_centers
+  debug:
+    var: data_centers
+  when: debug_vars
+
+- name: Fetch data_center ressources with include loop
+  include_tasks: vsphere_20_get_datacenter_resources.yml
+  loop: "{{ data_centers.json.value }}"
+  loop_control:
+    loop_var: data_center
+
+- name: Debug - Print fact_inventory
+  debug:
+    var: fact_inventory
+  when: debug_vars

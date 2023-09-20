@@ -11,6 +11,7 @@ galaxy_info:
   - name: EL
     versions:
     - 9
+    - 8
   galaxy_tags:
     - vsphere
     - vmware

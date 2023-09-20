@@ -1,0 +1,147 @@
+- name: Get Hosts by API for cluster {{ cluster.name }}
+  uri:
+    url: "https://{{ target.vcenter_api_url }}/rest/vcenter/host?filter.clusters={{ cluster.cluster }}"
+    method: GET
+    headers:
+      vmware-api-session-id: "{{ login.json.value }}"
+    validate_certs: "{{ target.validate_certs }}"
+  register: hosts
+
+- name: Debug - Print hosts
+  debug:
+    var: hosts
+  when: debug_vars
+
+- name: Get Datastores by API for cluster {{ cluster.name }}
+  uri:
+    url: "https://{{ target.vcenter_api_url }}/rest/vcenter/datastore?filter.clusters={{ cluster.cluster }}"
+    method: GET
+    headers:
+      vmware-api-session-id: "{{ login.json.value }}"
+    validate_certs: "{{ target.validate_certs }}"
+  register: datastores
+
+- name: Debug - Print datastores
+  debug:
+    var: datastores
+  when: debug_vars
+
+- name: Get Networks by API for cluster {{ cluster.name }}
+  uri:
+    url: "https://{{ target.vcenter_api_url }}/rest/vcenter/network?filter.clusters={{ cluster.cluster }}"
+    method: GET
+    headers:
+      vmware-api-session-id: "{{ login.json.value }}"
+    validate_certs: "{{ target.validate_certs }}"
+  register: networks
+
+- name: Debug - Print networks
+  debug:
+    var: networks
+  when: debug_vars
+
+#- name: Get Virtual Machines by API for cluster {{ cluster.name }}
+#  uri:
+#    url: "https://{{ target.vcenter_api_url }}/rest/vcenter/vm?filter.clusters={{ cluster.cluster }}"
+#    method: GET
+#    headers:
+#      vmware-api-session-id: "{{ login.json.value }}"
+#    validate_certs: "{{ target.validate_certs }}"
+#  register: virtual_machines
+
+- name: Create and append hosts to ressource_inventory
+  set_fact:
+    fact_inventory: "{{ fact_inventory | default({}) | combine({ target.ressource_name: {
+          'data_centers': {
+            data_center.name: {
+              'clusters': {
+                cluster.name: {
+                  'hosts': {
+                    host.name: {
+                      'name': host.name,
+                      'type': 'host'
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } }, recursive=True) }}"
+  loop: "{{ hosts.json.value | selectattr('name', 'match', target.host_regex|default('.*')) }}"
+  loop_control:
+    loop_var: host
+
+- name: Create and append datastores to ressource_inventory
+  set_fact:
+    fact_inventory: "{{ fact_inventory | default({}) | combine({ target.ressource_name: {
+          'data_centers': {
+            data_center.name: {
+              'clusters': {
+                cluster.name: {
+                  'datastores': {
+                    datastore.name: {
+                      'name': datastore.name,
+                      'free_space_gb': ((datastore.free_space / 1024 / 1024 / 1024 )|int),
+                      'fs_type': datastore.type,
+                      'type': 'datastore'
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } }, recursive=True) }}"
+  loop: "{{ datastores.json.value | selectattr('name', 'match', target.datastore_regex|default('.*')) }}"
+  loop_control:
+    loop_var: datastore
+
+- name: Create and append networks to ressource_inventory
+  set_fact:
+    fact_inventory: "{{ fact_inventory | default({}) | combine({ target.ressource_name: {
+          'data_centers': {
+            data_center.name: {
+              'clusters': {
+                cluster.name: {
+                  'networks': {
+                    network.name: {
+                      'name': network.name,
+                      'type': 'network'
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } }, recursive=True) }}"
+  loop: "{{ networks.json.value | selectattr('name', 'match', target.network_regex|default('.*'))}}"
+  loop_control:
+    loop_var: network
+
+#- name: Create and append virtual_machines to ressource_inventory
+#  set_fact:
+#    fact_inventory: "{{ fact_inventory | default({}) | combine({ target.ressource_name: {
+#          'data_centers': {
+#            data_center.name: {
+#              'clusters': {
+#                cluster.name: {
+#                  'virtual_machines': {
+#                    virtual_machine.name: {
+#                      'name': virtual_machine.name,
+#                      'memory_size_mb': virtual_machine.memory_size_MiB,
+#                      'cpu': virtual_machine.cpu_count,
+#                      'type': 'virtual_machine'
+#                    }
+#                  }
+#                }
+#              }
+#            }
+#          }
+#        } }, recursive=True) }}"
+#  loop: "{{ virtual_machines.json.value | selectattr('name', 'match', target.virtual_machine_regex|default('.*')) }}"
+#  loop_control:
+#    loop_var: virtual_machine
+
+- name: Debug - Print fact_inventory
+  debug:
+    var: fact_inventory
+  when: debug_vars

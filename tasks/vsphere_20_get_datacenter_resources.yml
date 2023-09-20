@@ -1,0 +1,89 @@
+- name: Get Clusters by API
+  uri:
+    url: "https://{{ target.vcenter_api_url }}/rest/vcenter/cluster?filter.datacenters={{ data_center.datacenter }}"
+    method: GET
+    headers:
+      vmware-api-session-id: "{{ login.json.value }}"
+    validate_certs: "{{ target.validate_certs }}"
+  register: clusters
+
+- name: Debug - Print clusters
+  debug:
+    var: clusters
+  when: debug_vars
+
+- name: Gather information about all folders with vmware_folder_info
+  vmware_folder_info:
+    validate_certs: "{{ target.validate_certs }}"
+    hostname: "{{ target.vcenter_api_url }}"
+    username: "{{ target.vcenter_username }}"
+    password: "{{ target.vcenter_password }}"
+    datacenter: "{{ data_center.name }}"
+  register: folders_info
+
+- name: Debug - Print folders_info
+  debug:
+    var: folders_info
+  when: debug_vars
+
+- name: Extract and filter folder names
+  set_fact:
+    vm_folders: "{{ folders_info.flat_folder_info | map(attribute='path') | select('search', '/vm/') | map('regex_replace', '.*/vm/', '') | reject('search', 'vCLS') | list }}"
+
+- name: Debug - Print vm_folders
+  debug:
+    var: vm_folders
+  when: debug_vars
+
+- name: Create and append clusters to ressource_inventory
+  set_fact:
+    fact_inventory: "{{ fact_inventory | default({}) | combine({ target.ressource_name: {
+          'type': target.type,
+          'vcenter_fqdn': target.vcenter_api_url,
+          'data_centers': {
+            data_center.name: {
+              'vcenter_fqdn': target.vcenter_api_url,
+              'name': data_center.name,
+              'type': 'datacenter',
+              'clusters': {
+                cluster.name: {
+                  'name': cluster.name,
+                  'type': 'cluster'
+                }
+              }
+            }
+          }
+        } }, recursive=True) }}"
+  loop: "{{ clusters.json.value | selectattr('name', 'match', target.cluster_regex|default('.*'))}}"
+  loop_control:
+    loop_var: cluster
+
+- name: Create and append vm_folders to ressource_inventory
+  set_fact:
+    fact_inventory: "{{ fact_inventory | default({}) | combine({ target.ressource_name: {
+          'data_centers': {
+            data_center.name: {
+              'vm_folders': {
+                vm_folder: {
+                  'name': vm_folder,
+                  'type': 'vm_folder'
+                }
+              }
+            }
+          }
+        } }, recursive=True) }}"
+  loop: "{{ vm_folders | select('match', target.vm_folder_regex|default('.*')) | list }}"
+  loop_control:
+    loop_var: vm_folder
+
+- name: Debug - Print fact_inventory
+  debug:
+    var: fact_inventory
+  when: debug_vars
+
+- name: Fetch data_center ressources with include loop
+  include_tasks: vsphere_30_get_cluster_resources.yml
+  loop: "{{ clusters.json.value | selectattr('name', 'match', target.cluster_regex|default('.*')) }}"
+  loop_control:
+    loop_var: cluster
+

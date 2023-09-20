@@ -14,7 +14,7 @@ This Ansible role allows you to gather essential facts from various endpoint res
 
 
 ## Requirements
-- Ansible >= 2.9
+- Ansible >= 2.11
 - Python >= 3.6 (on the target host)
 - Python packages:
   - pip
@@ -42,7 +42,6 @@ The following variables are available for configuration:
   - `datastore_regex`: A regular expression to filter the datastores.
   - `network_regex`: A regular expression to filter the networks.
   - `vm_folder_regex`: A regular expression to filter the VM folders.
-  - `vm_regex`: A regular expression to filter the virtual machines.
 
 
 ## Dependencies
@@ -56,7 +55,7 @@ GPLv3
 ## Usage
 To use this role, you need to specify the variables in the `inventory_targets` list in your playbook or in the `defaults/main.yml` file. Each item in the list represents a target from which to gather facts. 
 
-The `datacenter_regex`, `cluster_regex`, `host_regex`, `datastore_regex`, `network_regex`, `vm_folder_regex`, and `vm_regex` variables allow you to filter the results from the vSphere API. These variables accept regular expressions. For example, if you want to gather facts only from data centers whose names start with "dc", you can set `datacenter_regex` to '^dc'.
+The `datacenter_regex`, `cluster_regex`, `host_regex`, `datastore_regex`, `network_regex` and `vm_folder_regex` variables allow you to filter the results from the vSphere API. These variables accept regular expressions. For example, if you want to gather facts only from data centers whose names start with "dc", you can set `datacenter_regex` to '^dc'.
 
 ## Testing
 Before running the tests, you need to create a `vars.yml` file in the `tests` directory with your specific configuration. You can do this by copying the `vars_example.yml` file:
@@ -120,19 +119,27 @@ chmod +x /var/www/lighttpd/cgi-bin/test.cgi
 curl http://127.0.0.1:8888/cgi-bin/test.cgi
 ```
 
-In this roles, i provided a cgi which could be used to serve this options, its in `tests/cgi-bin/options.cgi` just copy it to cgi-bin dir, update json file location and call it.   
+In this roles, i provided a cgi which could be used to serve this options, its in `tests/cgi-bin/option.py` just copy it to cgi-bin dir, update json file location and call it.   
 Please keep in mind, that this cgi is just a proof of concept at the moment, quick and dirty
 
 ```
-cp tests/cgi-bin/options.cgi /var/www/lighttpd/cgi-bin/option.cgi
+cp tests/cgi-bin/option.py /var/www/lighttpd/cgi-bin/option.cgi
 chmod +x /var/www/lighttpd/cgi-bin/option.cgi
 vi /var/www/lighttpd/cgi-bin/option.cgi # update json file location
 ```
 
 And then you can call it within rundeck:
-* http://127.0.0.1:8888/cgi-bin/option.py?key=data_centers
-* http://127.0.0.1:8888/cgi-bin/option.py?filter=data_centers:${option.DataCenter.value}&key=clusters
-* http://127.0.0.1:8888/cgi-bin/option.py?filter=data_centers:${option.DataCenter.value},clusters:${option.Cluster.value}&key=hosts
-* http://127.0.0.1:8888/cgi-bin/option.py?filter=data_centers:${option.DataCenter.value},clusters:${option.Cluster.value}&key=datastores
+* http://127.0.0.1:8888/cgi-bin/option.py?filter=type:vsphere&filter=type:datacenter&key=name
+```
+[ "Datacenter1" ]
+```
+* http://127.0.0.1:8888/cgi-bin/option.py?filter=type:vsphere&filter=type:datacenter,name:${option.DataCenter.value}&filter=type:cluster&key=name
+```
+[ "Cluster1" ]
 
+```
+* http://127.0.0.1:8888/cgi-bin/option.py?filter=type:vsphere&filter=type:datacenter,name:${option.DataCenter.value}&filter=type:cluster,name:${option.Cluster.value}&filter=type:datastore&key=name
+```
+[ "LUN_01_VM_Replica", "LUN_02_VM_Replicas" ]
+```
 And this is quite amazing ... with not much effort

@@ -14,5 +14,4 @@ inventory_targets:
     datastore_regex: '.*'
     network_regex: '.*'
     vm_folder_regex: '.*'
-    vm_regex: '.*'
 ...

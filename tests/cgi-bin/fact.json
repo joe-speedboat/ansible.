@@ -1,68 +1,63 @@
 {
-    "admin-vcenter": {
-        "clusters": [
-            "Cluster1"
-        ],
-        "data_centers": [
-            "Datacenter1"
-        ],
-        "datastores": [
-            "LUN_01_DR",
-            "LUN_02_Replicas",
-            "LUN_03_VM"
-        ],
-        "hosts": [
-            "10.11.12.17",
-            "10.11.12.18"
-        ],
-        "networks": [
-            "lab_internal",
-            "lab_wan",
-            "Backup"
-        ],
-        "type": "vsphere",
-        "vcenter_fqdn": "svpvcenter02.domain.local",
-        "vm_folders": [
-            "Lab",
-            "Backup"
-        ],
-        "vms": [
-            "svpmail01_replica",
-            "svpinfra01_replica",
-            "svtmail01"
-        ]
+  "admin-vcenter": {
+    "data_centers": {
+      "Datacenter1": {
+        "clusters": {
+          "Cluster1": {
+            "datastores": {
+              "LUN_01_VM_Replica": {
+                "free_space_gb": 3497,
+                "fs_type": "VMFS",
+                "name": "LUN_01_VM_Replica",
+                "type": "datastore"
+              },
+              "LUN_02_VM_Replicas": {
+                "free_space_gb": 956,
+                "fs_type": "VMFS",
+                "name": "LUN_02_VM_Replicas",
+                "type": "datastore"
+              }
+            },
+            "hosts": {
+              "192.168.1.97": {
+                "name": "192.168.1.97",
+                "type": "host"
+              },
+              "192.168.1.98": {
+                "name": "192.168.1.98",
+                "type": "host"
+              }
+            },
+            "name": "Cluster1",
+            "networks": {
+              "10 lab_server_prod": {
+                "name": "10 lab_server_prod",
+                "type": "network"
+              },
+              "10-Server-Prod": {
+                "name": "10-Server-Prod",
+                "type": "network"
+              }
+            },
+            "type": "cluster"
+          }
+        },
+        "name": "Datacenter1",
+        "type": "datacenter",
+        "vm_folders": {
+          "Appliance": {
+            "name": "Appliance",
+            "type": "vm_folder"
+          },
+          "Backup": {
+            "name": "Backup",
+            "type": "vm_folder"
+          }
+        }
+      }
     },
-    "svpvcenter01": {
-        "clusters": [
-            "RZ1"
-        ],
-        "data_centers": [
-            "Datacenter2"
-        ],
-        "datastores": [
-            "LUN01_Linux",
-            "LUN02_Windows",
-            "LUN03_VMNoSnapshot"
-        ],
-        "hosts": [
-            "svpesx05.domain.local",
-            "svpesx06.domain.local"
-        ],
-        "networks": [
-            "Linux-Server-Prod",
-            "Windows-Server-Prod"
-        ],
-        "type": "vsphere",
-        "vcenter_fqdn": "svpvcenter01.domain.local",
-        "vm_folders": [
-            "Windows",
-            "Linux",
-            "Linux/Master"
-        ],
-        "vms": [
-            "svpgraylog03",
-            "svpnprobe10",
-            "svppower01"
-        ]
-    }
+    "type": "vsphere",
+    "vcenter_fqdn": "svvcenter-02.domain.local"
+  }
 }
+
