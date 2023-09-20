@@ -123,9 +123,9 @@ In this roles, i provided a cgi which could be used to serve this options, its i
 Please keep in mind, that this cgi is just a proof of concept at the moment, quick and dirty
 
 ```
-cp tests/cgi-bin/option.py /var/www/lighttpd/cgi-bin/option.cgi
-chmod +x /var/www/lighttpd/cgi-bin/option.cgi
-vi /var/www/lighttpd/cgi-bin/option.cgi # update json file location
+cp tests/cgi-bin/option.py /var/www/lighttpd/cgi-bin/option.py
+chmod +x /var/www/lighttpd/cgi-bin/option.py
+vi /var/www/lighttpd/cgi-bin/option.py # update json file location if needed
 ```
 
 And then you can call it within rundeck:
