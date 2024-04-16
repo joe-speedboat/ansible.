@@ -63,6 +63,12 @@
     host_networks: "{{ host_networks + [item.hosts_portgroup_info[item.host.name] | map(attribute='portgroup') | list | reject('search', 'VM Network') | reject('search', 'Management Network') | reject('match', 'VMkernel.*') | reject('match', 'RoCE_.*') | list ] }}"
   loop: "{{ portgroup_info.results }}"
 
+
+- name: Initialize networks if none found
+  set_fact:
+    host_networks: ['none']
+  when: host_networks | length == 0
+
 - name: Initialize networks with the first host's networks
   set_fact:
     networks: "{{ host_networks | first }}"
