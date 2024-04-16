@@ -97,7 +97,7 @@ systemctl status lighttpd
 
 lsof -i -P -n | grep light
 
-test -f /usr/bin/python || ln -s /usr/bin/python3 /usr/bin/python
+test -f /usr/bin/python && ln -s /usr/bin/python3 /usr/bin/python
 
 mkdir -p /var/www/lighttpd/cgi-bin
 
@@ -123,9 +123,9 @@ In this roles, i provided a cgi which could be used to serve this options, its i
 Please keep in mind, that this cgi is just a proof of concept at the moment, quick and dirty
 
 ```
-cp tests/cgi-bin/option.py /var/www/lighttpd/cgi-bin/option.py
-chmod +x /var/www/lighttpd/cgi-bin/option.py
-vi /var/www/lighttpd/cgi-bin/option.py # update json file location if needed
+cp tests/cgi-bin/option.py /var/www/lighttpd/cgi-bin/option.cgi
+chmod +x /var/www/lighttpd/cgi-bin/option.cgi
+vi /var/www/lighttpd/cgi-bin/option.cgi # update json file location
 ```
 
 And then you can call it within rundeck:

@@ -7,18 +7,33 @@
     validate_certs: "{{ target.validate_certs }}"
   register: hosts
 
-- name: Debug - Print hosts
+- name: Debug - Print all hosts hosts of cluster {{ cluster.name }}
   debug:
     var: hosts
   when: debug_vars
 
-- name: Get Datastores by API for cluster {{ cluster.name }}
-  uri:
-    url: "https://{{ target.vcenter_api_url }}/rest/vcenter/datastore?filter.clusters={{ cluster.cluster }}"
-    method: GET
-    headers:
-      vmware-api-session-id: "{{ login.json.value }}"
+- name: select hosts that are connected, we do not care about others
+  set_fact:
+    hosts: "{{ hosts.json.value | selectattr('connection_state', 'equalto', 'CONNECTED') | list }}"
+
+- name: Debug - Print connected hosts of cluster {{ cluster.name }}
+  debug:
+    var: hosts
+  when: debug_vars
+
+- name: Gather some info from a datastore using the vSphere API output schema
+  community.vmware.vmware_datastore_info:
+    hostname: '{{ target.vcenter_api_url }}'
+    username: '{{ target.vcenter_username }}'
+    password: '{{ target.vcenter_password }}'
+    cluster: '{{ cluster.name }}'
+    schema: vsphere
     validate_certs: "{{ target.validate_certs }}"
+    properties:
+      - name
+      - summary.freeSpace
+      - summary.multipleHostAccess
+  delegate_to: localhost
   register: datastores
 
 - name: Debug - Print datastores
@@ -26,28 +41,49 @@
     var: datastores
   when: debug_vars
 
-- name: Get Networks by API for cluster {{ cluster.name }}
-  uri:
-    url: "https://{{ target.vcenter_api_url }}/rest/vcenter/network?filter.clusters={{ cluster.cluster }}"
-    method: GET
-    headers:
-      vmware-api-session-id: "{{ login.json.value }}"
+- name: Gather portgroup info (Networks) for hosts of cluster={{ cluster.name }}
+  community.vmware.vmware_portgroup_info:
+    hostname: '{{ target.vcenter_api_url }}'
+    username: '{{ target.vcenter_username }}'
+    password: '{{ target.vcenter_password }}'
+    esxi_hostname: '{{ host.name }}'
     validate_certs: "{{ target.validate_certs }}"
-  register: networks
+  delegate_to: localhost
+  register: portgroup_info
+  loop: "{{ hosts | selectattr('name', 'match', target.host_regex|default('.*')) }}"
+  loop_control:
+    loop_var: host
+
+- name: initialize host_networks
+  set_fact:
+    host_networks: []
+
+- name: Extract portgroup names from each host (Networks) 
+  set_fact:
+    host_networks: "{{ host_networks + [item.hosts_portgroup_info[item.host.name] | map(attribute='portgroup') | list | reject('search', 'VM Network') | reject('search', 'Management Network') | reject('match', 'VMkernel.*') | reject('match', 'RoCE_.*') | list ] }}"
+  loop: "{{ portgroup_info.results }}"
+
+
+- name: Initialize networks if none found
+  set_fact:
+    host_networks: ['none']
+  when: host_networks | length == 0
+
+- name: Initialize networks with the first host's networks
+  set_fact:
+    networks: "{{ host_networks | first }}"
+
+- name: Find common networks across all hosts
+  set_fact:
+    networks: "{{ networks | intersect(host_networks[item]) }}"
+  loop: "{{ range(1, host_networks | length) }}"
+  loop_control:
+    index_var: item
 
 - name: Debug - Print networks
   debug:
     var: networks
   when: debug_vars
-
-#- name: Get Virtual Machines by API for cluster {{ cluster.name }}
-#  uri:
-#    url: "https://{{ target.vcenter_api_url }}/rest/vcenter/vm?filter.clusters={{ cluster.cluster }}"
-#    method: GET
-#    headers:
-#      vmware-api-session-id: "{{ login.json.value }}"
-#    validate_certs: "{{ target.validate_certs }}"
-#  register: virtual_machines
 
 - name: Create and append hosts to ressource_inventory
   set_fact:
@@ -67,7 +103,7 @@
             }
           }
         } }, recursive=True) }}"
-  loop: "{{ hosts.json.value | selectattr('name', 'match', target.host_regex|default('.*')) }}"
+  loop: "{{ hosts | selectattr('name', 'match', target.host_regex|default('.*')) }}"
   loop_control:
     loop_var: host
 
@@ -81,8 +117,8 @@
                   'datastores': {
                     datastore.name: {
                       'name': datastore.name,
-                      'free_space_gb': ((datastore.free_space / 1024 / 1024 / 1024 )|int),
-                      'fs_type': datastore.type,
+                      'multipleHostAccess': datastore.summary.multipleHostAccess,
+                      'free_space_gb': ((datastore.summary.freeSpace / 1024 / 1024 / 1024 )|int),
                       'type': 'datastore'
                     }
                   }
@@ -91,7 +127,7 @@
             }
           }
         } }, recursive=True) }}"
-  loop: "{{ datastores.json.value | selectattr('name', 'match', target.datastore_regex|default('.*')) }}"
+  loop: "{{ datastores.datastores | selectattr('name', 'match', target.datastore_regex|default('.*')) }}"
   loop_control:
     loop_var: datastore
 
@@ -103,8 +139,8 @@
               'clusters': {
                 cluster.name: {
                   'networks': {
-                    network.name: {
-                      'name': network.name,
+                    network: {
+                      'name': network,
                       'type': 'network'
                     }
                   }
@@ -113,33 +149,9 @@
             }
           }
         } }, recursive=True) }}"
-  loop: "{{ networks.json.value | selectattr('name', 'match', target.network_regex|default('.*'))}}"
+  loop: "{{ networks | select('match', target.network_regex|default('.*')) | list }}"
   loop_control:
     loop_var: network
-
-#- name: Create and append virtual_machines to ressource_inventory
-#  set_fact:
-#    fact_inventory: "{{ fact_inventory | default({}) | combine({ target.ressource_name: {
-#          'data_centers': {
-#            data_center.name: {
-#              'clusters': {
-#                cluster.name: {
-#                  'virtual_machines': {
-#                    virtual_machine.name: {
-#                      'name': virtual_machine.name,
-#                      'memory_size_mb': virtual_machine.memory_size_MiB,
-#                      'cpu': virtual_machine.cpu_count,
-#                      'type': 'virtual_machine'
-#                    }
-#                  }
-#                }
-#              }
-#            }
-#          }
-#        } }, recursive=True) }}"
-#  loop: "{{ virtual_machines.json.value | selectattr('name', 'match', target.virtual_machine_regex|default('.*')) }}"
-#  loop_control:
-#    loop_var: virtual_machine
 
 - name: Debug - Print fact_inventory
   debug:
