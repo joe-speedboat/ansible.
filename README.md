@@ -14,8 +14,9 @@ This Ansible role allows you to gather essential facts from various endpoint res
 
 
 ## Requirements
-- Ansible >= 2.11
-- Python >= 3.6 (on the target host)
+- Ansible >= 2.18
+- Python >= 3.8 (target host)
+- Python >= 3.12 (control node)
 - Python packages:
   - pip
   - setuptools

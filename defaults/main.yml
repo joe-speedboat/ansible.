@@ -12,8 +12,10 @@ inventory_targets:
     vcenter_password: "mysecret_do_not_share"
     datacenter_regex: '.*'
     cluster_regex: '.*'
+    # cluster_regex: '(?i)^(Linux |(Windows |Oracle ).*$'
     host_regex: '.*'
     datastore_regex: '.*'
+    # datastore_regex: '(?i)^lun.*(_lin|_win|_ora).*$'
     network_regex: '.*'
     vm_folder_regex: '.*'
 
